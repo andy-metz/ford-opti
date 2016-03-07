@@ -1,4 +1,11 @@
-// opti
+/*
+* Ford-Bellman algorithm (optimized version)
+*
+* Authors: André ERBA - Olivier Mertz
+*
+*
+*
+*/
 #include <string>
 #include <iostream>
 #include <map>
@@ -9,8 +16,10 @@
 
 using namespace std;
 
+/*
+*  Vertex class
+*/
 class Vertex{
-
 private:
 	string name;
 public:
@@ -22,6 +31,10 @@ public:
 	}
 };
 
+
+/*
+*  Edge class
+*/
 class Edge{
 private:
 	double weight;
@@ -42,12 +55,16 @@ public:
 	void setWeight(double w){
 		weight = w;
 		}
+
 	double getWeight(){
 		return weight;
 	}
-
 };
 
+
+/*
+*  Vertices list of the graph
+*/
 class Vertices_list{
 public:
 	Vertex * vertex;
@@ -73,10 +90,13 @@ public:
 
 		return s;
 	}
-
 	friend ostream & operator << (ostream & os, const Vertices_list & vl);
 };
 
+
+/*
+*  Edges list of the graph
+*/
 class Edges_list{
 public:
 	Edge * edge;
@@ -88,26 +108,22 @@ public:
 
 
 
-
-// List of predecessors
-class Pred{
-
-};
-
-// List of successors for each vertex of a graph
+/*
+*  List of successors of each vertex of the graph
+*/
 class Successors{
 public:
 	string value;
 	double w;
 	Successors *next;
 };
-// 
-// 
 
 
-//
-// Graph Class
-//
+
+/*
+*  Graph class
+* cotains shortest_path method to retrieve shortest path using Ford-Bellman optimized
+*/
 class Graph{
 
 private:
@@ -115,7 +131,7 @@ private:
 	Vertices_list *vertices_list = NULL;
 	Edges_list *edges_list = NULL;
 	// Concern Shortest path
-	map<string, double> lambda;
+	map<string, double> lambda; 
 	unordered_set<string> *marked_vertex;
 	unordered_set<string> *alternate_marked_vertex;
 	map<string, Successors *> successors_list;
@@ -128,7 +144,7 @@ public:
 		start_vertex = NULL;
 	}
 
-	// Add a vertex
+	// Add a vertex, if already exists return a poiter to it
 	Vertex *  add_vertex(string name){
 		Vertex * v;
 		Vertices_list *vl;
@@ -146,19 +162,25 @@ public:
 		return v;
 	}
 
+
+	// Return predecessor
 	string getPredecessor(string x){
 		return predecessor[x];
 	}
 
+
+	// Set the starting vertex of the graph to execute shortest_path
 	void setStartVertex(string s){
 		start_vertex = add_vertex(s);
 	}
 
+
+	// return a pointer to the vertices_list
 	Vertices_list * getVertices_list(){
 		return(vertices_list);
 	}
 
-
+	// return the number of vertex
 	int getNumberOfVertex(){
 		int n = 0;
 		Vertex * v;
@@ -173,7 +195,7 @@ public:
 	}
 
 
-	// Add an edge
+	// Add an edge and vertices if not already in, update vertices_list to
 	Edge * add_edge(string es, string ed, double w){
 		Edges_list *el;
 		Vertex *s, *d;
@@ -200,7 +222,7 @@ public:
 	}
 
 
-	// Get an edge
+	// Return a pointer to an edge giving source edge and destination edge
 	Edge * getEdge(string s, string d){
 		Edges_list * el;
 
@@ -214,7 +236,7 @@ public:
 	}
 
 
-	// Get a vertex
+	// Return a vertex from vertices_list
 	Vertex * getVertex(string n){
 		Vertices_list *vl;
 		vl = this->vertices_list;
@@ -226,18 +248,34 @@ public:
 		return NULL;
 	}
 
+// Return weight of shortest path from any edge of the graph
+double getShortestPathTo(string x){
+	double w = 0.0;
+	cout << "Shortest path to " << x << ": ";
+	w = lambda[x];
+	while (x != ""){
+		x = predecessor[x];
+		cout << x << " ";
+	}
+	cout << endl << "Weight: " << w;
+	return w;
+}
 
-	// relax
-
-
-	// algo Ford-Bellman optimized
-	void shortest_path(){
+/*
+*
+*  Ford-Bellman optimized method
+*  return 0 if negative cycle detected
+*         1 otherwise
+*/
+double shortest_path(){
 		Vertices_list * vl = vertices_list;
 		Edges_list * el;
 		Edge *e;
 		Successors * s;
 		map<string, Successors *>::iterator it;
-		// initialisation successor_list
+
+
+		// successor_list populate
 		el = edges_list;
 		while (edges_list){
 			e = edges_list->edge;
@@ -248,8 +286,6 @@ public:
 			it = successors_list.find(e->getVertexSource()->getName());
 			if (it == successors_list.end()){  // doesn't exists
 				s->next = NULL;
-
-
 			}
 			else{
 				s->next = it->second;
@@ -267,24 +303,24 @@ public:
 		marked_vertex = new unordered_set<string>;
 		alternate_marked_vertex = new unordered_set<string>;
 
-		while (vl)
-		{
-			lambda[vl->vertex->getName()] = DBL_MAX; // Double max afffectation to all vertex 
+		while (vl){ // 
+			lambda[vl->vertex->getName()] = DBL_MAX; // DBL_MAX afffectation to all vertex 
 			predecessor[vl->vertex->getName()] = "";
 			vl = vl->next;
 		}
 
-		//
+		// Set start_edge to 0.0
 		lambda[this->start_vertex->getName()] = 0;
 
-		// init marked_vertex
+		// init marked_vertex with start_vertex
 		marked_vertex->insert(start_vertex->getName());
 
-
+		//
+		//  MAIN LOOP
+		//
 		while ((k < n) && !marked_vertex->empty()){
 			k++;
 			alternate_marked_vertex->clear();
-
 
 			for (auto itr = marked_vertex->begin(); itr != marked_vertex->end(); ++itr){
 
@@ -292,43 +328,29 @@ public:
 				if (it != successors_list.end()){
 					Successors *next_successor;
 					next_successor = it->second;
-					while (next_successor)
-					{
+					while (next_successor){
 
 						if (lambda[*itr] + next_successor->w < lambda[next_successor->value]){ // Better path
 							predecessor[next_successor->value] = *itr;
 							lambda[next_successor->value] = lambda[*itr] + next_successor->w;
 							alternate_marked_vertex->insert(next_successor->value);
 						}
-						cout << endl << next_successor->value;
-
-
-
 						next_successor = next_successor->next;
 					}
 				}
-
-				//set<string>::const_iterator mkit(marked_vertex.begin()), mkend(marked_vertex.end());
-				//for (; mkit != mkend; ++mkit){
-				/*
-				for_each(marked_vertex->begin(), marked_vertex->end(), [](string v){
-
-				it = successors_list.find(e->getVertexSource()->getName());
-				if (it == successors_list.end()){  // doesn't exists
-				s->next = NULL;
-				cout << v;
-
-
-				}
-
-				);*/
 			}
 
-		// 
 		marked_vertex->clear();
 		for (auto itr = alternate_marked_vertex->begin(); itr != alternate_marked_vertex->end(); ++itr)
 		marked_vertex->insert(*itr);
 		}
 
+		// Negative cycle test
+		if (!marked_vertex->empty()){
+			cout << "This graph contains a negative cycle!!!";
+			return 0;
+		}
+		else
+			return 1; 
 	}
 };
