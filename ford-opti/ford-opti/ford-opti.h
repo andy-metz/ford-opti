@@ -14,6 +14,7 @@
 #include <math.h>
 #include <algorithm>
 
+
 using namespace std;
 
 /*
@@ -183,7 +184,7 @@ public:
 	// return the number of vertex
 	int getNumberOfVertex(){
 		int n = 0;
-		Vertex * v;
+		// Vertex * v;
 
 		Vertices_list *vl;
 		vl = vertices_list;
@@ -249,16 +250,31 @@ public:
 	}
 
 // Return weight of shortest path from any edge of the graph
-double getShortestPathTo(string x){
-	double w = 0.0;
-	cout << "Shortest path to " << x << ": ";
-	w = lambda[x];
-	while (x != ""){
-		x = predecessor[x];
-		cout << x << " ";
+void getShortestPathTo(string x){
+	static string  first = ""; 
+
+	if (lambda[x] == DBL_MAX){  // Test if a shortest path exists
+		cout << "No shortest path for this vertex" << endl;
+		return;
 	}
-	cout << endl << "Weight: " << w;
-	return w;
+
+	if (first == "")
+		first = x;
+	if (x == ""){
+		cout << "Shortest path: ";
+		return;
+	}
+
+	getShortestPathTo(predecessor[x]);
+
+	if (first != x)
+		cout << x << "->";
+	else{
+		cout << x << endl;
+		cout << "Weight:" << lambda[x];
+	}
+
+	return;
 }
 
 /*
@@ -267,13 +283,14 @@ double getShortestPathTo(string x){
 *  return 0 if negative cycle detected
 *         1 otherwise
 */
-double shortest_path(){
+double shortest_path(string sv){
 		Vertices_list * vl = vertices_list;
 		Edges_list * el;
 		Edge *e;
 		Successors * s;
 		map<string, Successors *>::iterator it;
 
+		setStartVertex(sv); // Set start_vertex
 
 		// successor_list populate
 		el = edges_list;
@@ -304,7 +321,7 @@ double shortest_path(){
 		alternate_marked_vertex = new unordered_set<string>;
 
 		while (vl){ // 
-			lambda[vl->vertex->getName()] = DBL_MAX; // DBL_MAX afffectation to all vertex 
+			lambda[vl->vertex->getName()] = DBL_MAX; // DBL_MAX affectation to all vertex 
 			predecessor[vl->vertex->getName()] = "";
 			vl = vl->next;
 		}
@@ -314,6 +331,7 @@ double shortest_path(){
 
 		// init marked_vertex with start_vertex
 		marked_vertex->insert(start_vertex->getName());
+
 
 		//
 		//  MAIN LOOP
@@ -328,9 +346,8 @@ double shortest_path(){
 				if (it != successors_list.end()){
 					Successors *next_successor;
 					next_successor = it->second;
-					while (next_successor){
-
-						if (lambda[*itr] + next_successor->w < lambda[next_successor->value]){ // Better path
+					while (next_successor){ 
+						if (lambda[*itr] + next_successor->w <  lambda[next_successor->value]){ // Better path (relaxation)
 							predecessor[next_successor->value] = *itr;
 							lambda[next_successor->value] = lambda[*itr] + next_successor->w;
 							alternate_marked_vertex->insert(next_successor->value);
@@ -339,11 +356,11 @@ double shortest_path(){
 					}
 				}
 			}
-
+		// Update marked_vertex with alternate_marked_vertex
 		marked_vertex->clear();
 		for (auto itr = alternate_marked_vertex->begin(); itr != alternate_marked_vertex->end(); ++itr)
 		marked_vertex->insert(*itr);
-		}
+		}  // END MAIN LOOP
 
 		// Negative cycle test
 		if (!marked_vertex->empty()){
@@ -354,3 +371,4 @@ double shortest_path(){
 			return 1; 
 	}
 };
+
